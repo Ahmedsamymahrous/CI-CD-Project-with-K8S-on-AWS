@@ -1,0 +1,90 @@
+- hosts: jenkins_server
+  remote_user: ubuntu
+  become: yes
+  tasks:
+
+    - name: update apt
+      apt:
+        update_cache: yes
+    
+
+    - name: Create jenkins_home Directory
+      file:
+        name: jenkins_home
+        state: directory
+        mode: 0777
+
+
+    - name: Install openjdk
+      apt:
+        name: openjdk-8-jdk
+        state: present
+
+
+    - name: Install the Jenkins apt repository key
+      apt_key: 
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io.key 
+        state: present
+
+
+    - name: Configure the repository
+      apt_repository: 
+        repo: 'deb https://pkg.jenkins.io/debian-stable binary/' 
+        state: present
+
+
+    - name: Install Jenkins 
+      apt: 
+        name: jenkins 
+        update_cache: yes
+
+
+    - name: Ensure Jenkins is running
+      service: 
+        name: jenkins 
+        state: started
+
+
+    - name: Install Git
+      apt:
+        name: git
+        state: present
+
+
+    - name: Install Apache Maven
+      apt:
+        name: maven
+        state: present    
+
+
+    - name: Download Apache Maven  
+      get_url: 
+        url: https://www-us.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz 
+        dest: /tmp/apache-maven-3.6.3-bin.tar.gz
+
+
+    - name: Untar Maven 
+      shell: chdir=/tmp creates=/opt/apache-maven-3.6.3 tar -zxf apache-maven-3.6.3-bin.tar.gz -C /opt
+
+
+    - name: Update path for maven use
+      shell: export PATH=/opt/apache-maven-3.6.3/bin:$PATH
+        
+
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+
+
+    - name: Update apt and install docker-ce
+      apt: 
+        update_cache: yes 
+        name: docker-ce 
+        state: latest

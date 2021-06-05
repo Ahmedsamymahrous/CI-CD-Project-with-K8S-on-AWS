@@ -1,0 +1,5 @@
+[ansible-server]
+localhost
+
+[k8s-master]
+18.116.24.157

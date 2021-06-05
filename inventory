@@ -1,0 +1,8 @@
+[jenkins_server]
+<REPLACE THIS BY IP ADDRESS>	
+
+[k8s_manager]
+<REPLACE THIS BY IP ADDRESS>	
+
+[ansible_server]
+<REPLACE THIS BY IP ADDRESS>	

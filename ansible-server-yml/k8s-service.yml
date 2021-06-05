@@ -1,0 +1,14 @@
+- name: create service for deployment
+  hosts: k8s-master
+  become: true
+  user: ubuntu
+  tasks:
+
+  - name: Copy service file from ansible-server to k8s-master
+    copy:
+      src: ./k8s/service.yml
+      dest: /home/ubuntu/k8s/service.yml
+      mode: 0755
+
+  - name: Create a service
+    command: kubectl apply -f /home/ubuntu/k8s/service.yml

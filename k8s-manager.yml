@@ -1,0 +1,102 @@
+- hosts: k8s_manager
+  remote_user: ubuntu
+  become: yes
+  tasks:
+    
+    - name: Update apt
+      apt:
+        update_cache: yes
+
+
+    - name: Install pip3 
+      apt:
+        name: python3-pip
+        state: present
+
+
+    - name: Install aws cli
+      pip:
+        name: awscli
+        state: present    
+
+
+    - name: Install kubectl 
+      shell: curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+
+
+    - name: Changing permission of kubectl directory
+      file: 
+        dest: ./kubectl
+        mode: a+x
+
+
+    - name: Move [./kubectl] to [/usr/local/bin/kubectl]
+      shell: mv ./kubectl /usr/local/bin/kubectl
+      
+
+    - name: Install Kops
+      shell: curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64
+
+
+    - name: Changing permission of kops-linux-amd64
+      file:
+          dest: kops-linux-amd64
+          mode: a+x
+
+
+    - name: Move [kops-linux-amd64] to [/usr/local/bin/kubectl]
+      shell: mv kops-linux-amd64 /usr/local/bin/kops
+
+
+    - name: Run aws configure
+      expect:
+        command: aws configure
+        responses:
+          AWS Access Key ID: ""
+          AWS Secret Access Key: ""
+          Default region name: "us-east-2"
+          Default output format: ""
+
+
+    - name: Install boto3 
+      pip:
+        name: boto3
+        state: present
+
+
+    ## IF YOU HAVE A DOMAIN NAME
+    # - name: Create a Route53 private hosted zone
+    #   route53_zone:
+    #     zone: example.com
+    #     vpc_region: us-east-2
+    #     vpc_id: vpc-28f27f43
+
+
+    - name: Create new S3 bucket
+      aws_s3:
+        bucket: k8s-ahmedsamymahrous
+        mode: create
+        region: us-east-2
+
+    
+    - name: Generate SSH key
+      user:
+        name: ubuntu
+        generate_ssh_key: yes
+        force: no
+
+
+    - name: Copy private-key from k8s_manager to local machine
+      fetch:
+        src: /home/ubuntu/.ssh/id_rsa
+        dest: /home/ahmed/DevOps-Project/Ansible/id_rsa
+
+
+    - name: Create kubernetes cluster definitions on S3 bucket
+      command: kops create cluster --cloud=aws --zones=us-east-2a --ssh-public-key=/home/ubuntu/.ssh/id_rsa.pub --name=samy.k8s.local --node-size=t2.micro --master-size=t2.medium --state=s3://k8s-ahmedsamymahrous
+      ignore_errors: yes
+
+
+    - name: Create kubernetes cluser
+      command: kops update cluster --name samy.k8s.local --state s3://k8s-ahmedsamymahrous --yes
+      ignore_errors: yes

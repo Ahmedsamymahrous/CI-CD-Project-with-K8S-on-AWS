@@ -1,0 +1,25 @@
+- hosts: localhost
+  connection: local
+  tasks:
+
+  - name: Create docker image using war file
+    command: docker build -t devops-project-image:latest .
+    args:
+      chdir: /home/ansibleadmin/ansible-server-yml
+
+  - name: Log into DockerHub
+    expect:
+      command: docker login
+      responses:
+        Username: <USERNAME>
+        Password: <PASSWORD>
+
+  - name: Create tag to image
+    command: docker tag devops-project-image ahmedsamymahrous/devops-project-image
+
+  - name: Push image on to dockerhub
+    command: docker push ahmedsamymahrous/devops-project-image
+
+  - name: Remove docker images form ansible server
+    command: docker rmi devops-project-image:latest ahmedsamymahrous/devops-project-image
+    ignore_errors: yes

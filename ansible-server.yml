@@ -1,0 +1,87 @@
+- hosts: ansible_server
+  remote_user: ubuntu
+  become: yes
+  tasks:
+
+    - name: Update apt
+      apt:
+        update_cache: yes
+
+
+    - name: Install pip3 
+      apt:
+        name: python3-pip
+        update_cache: yes
+        state: present
+
+
+    - name: Install Ansible 
+      pip:
+        name: ansible
+        state: present
+
+
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+        update_cache: yes
+
+
+    - name: Ensure Docker is running
+      service: 
+        name: docker 
+        state: started
+    
+
+    - name: Create ansible user with sudo privileges
+      user:
+        name: ansibleadmin
+        groups: sudo,docker
+        append: yes
+        password: "{{ 'ansibleadmin' | password_hash('sha512','A512') }}"
+
+    
+    - name: Enable Password Authentication
+      shell: sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+
+    - name: Reload sshd service
+      service: 
+        name: sshd
+        state: reloaded 
+   
+        
+    - name: Create .ssh directory
+      file:
+        path: /home/ansibleadmin/.ssh/
+        state: directory
+        owner: ansibleadmin
+        group: ansibleadmin
+        mode: 0775
+
+
+    - name: Make the private-key of ansible server to connect to k8s-Master
+      copy:
+        src: ./18.117.132.108/home/ubuntu/.ssh/id_rsa
+        dest: /home/ansibleadmin/.ssh/id_rsa     
+        mode: 0755 
+
+
+    - name: Copy ansible-files from local to ansible server
+      copy:
+        src: ./ansible-server-yml
+        dest: /home/ansibleadmin     
+        mode: 0755 

@@ -1,0 +1,25 @@
+- name: Create pods using deployment 
+  hosts: k8s-master 
+  become: true
+  user: ubuntu
+  tasks: 
+
+  - name: Create k8s directory
+    file:
+      path: /home/ubuntu/k8s/
+      state: directory
+      owner: ubuntu
+      group: ubuntu
+      mode: 0775
+
+  - name: Copy deployment file from ansible-server to k8s-master
+    copy:
+      src: ./k8s/deployment.yml
+      dest: /home/ubuntu/k8s/deployment.yml
+      mode: 0755
+
+  - name: Create a deployment
+    command: kubectl apply -f /home/ubuntu/k8s/deployment.yml
+ 
+  - name: Update deployment with new pods if image updated in docker hub
+    command: kubectl rollout restart deployment.v1.apps/k8s-deployment
